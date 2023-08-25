@@ -1,49 +1,39 @@
-const { Schema, model } = require("mongoose");
-const Joi = require("joi");
-const { handleMongooseError } = require("../helpers");
+import { Schema, model } from "mongoose";
+import { handleMongooseError, handleRunValidators } from "./hooks.js";
 
-const contactSchema = new Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Set name for contact"],
-    },
-    email: {
-      type: String,
-      required: [true],
-    },
-    phone: {
-      type: String,
-      required: [true],
-    },
-    favorite: {
-      type: Boolean,
-      default: false,
-    },
+const contact = new Schema({
+  name: {
+    type: String,
+    minlength: 2,
+    maxlength: 30,
+    required: [true, "Set name for contact"],
   },
-  { versionKey: false, timestamps: true }
-);
-
-contactSchema.post("save", handleMongooseError);
-
-const Contact = model("contact", contactSchema);
-
-const addSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().required(),
-  phone: Joi.string().required(),
+  email: {
+    type: String,
+    required: [true, "Contact email is required"],
+  },
+  phone: {
+    type: String,
+    required: [true, "Contact phone is required"],
+  },
+  favorite: {
+    type: Boolean,
+    default: false,
+  },
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: "user",
+  },
 });
 
-const updateFavoriteSchema = Joi.object({
-  
-  favorite: Joi.boolean().required(),
-});
+contact.pre("findOneAndUpdate", handleRunValidators);
 
-const schemas = {
-  addSchema,
-  updateFavoriteSchema,
-};
+contact.post("save", handleMongooseError);
 
-module.exports = { Contact, schemas };
+contact.post("findOneAndUpdate", handleMongooseError);
+
+const Contact = model("contact", contact);
+
+export default Contact;
 
 
