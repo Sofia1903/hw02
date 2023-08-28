@@ -1,12 +1,12 @@
 import express from "express";
-import contactsControllers from "../../controllers/contactsController/index.js";
+import contactsControllers from "../../controllers/contacts.js";
 import { validateRequestBody, validateId } from "../../helpers/validation.js";
 
 import {
   changeContactSchema,
   addContactSchema,
   patchContactSchema,
-} from "../../helpers/schema.js";
+} from "../../helpers/schemas.js";
 import autorizationUser from "../../auth/auth.js";
 
 const router = express.Router();
