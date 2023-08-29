@@ -1,5 +1,5 @@
-import Contact from "../../models/contacts.js";
-import HttpErrorCreator from "../../helpers/HttpErrorCreator.js";
+import Contact from "../models/contacts.js";
+import HttpErrorCreator from "../helpers/HttpError.js";
 
 export async function listContacts(req, res) {
   const { _id: owner } = req.user;

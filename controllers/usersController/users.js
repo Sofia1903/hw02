@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
-import bcryptjs from "bcryptjs";
+import bcrypt from "bcrypt";
 
-import User from "../../models/user.js";
-import HttpErrorCreator from "../../helpers/HttpErrorCreator.js";
+import User from "../../models/users";
+import HttpErrorCreator from "../../helpers/HttpError.js";
 
 const JWT_TOKEN = process.env.JWT_KEY;
 
@@ -12,7 +12,7 @@ export async function createNewUser(req, res) {
   if (user) {
     throw HttpErrorCreator(409, "Email in use");
   }
-  const hashedPassword = await bcryptjs.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await User.create({ ...req.body, password: hashedPassword });
 
   res.status(201).json({
@@ -29,7 +29,7 @@ export async function logIn(req, res) {
   if (!user) {
     throw HttpErrorCreator(401, "Email or password is wrong");
   }
-  const userPassword = await bcryptjs.compare(password, user.password);
+  const userPassword = await bcrypt.compare(password, user.password);
   if (!userPassword) {
     throw HttpErrorCreator(401, "Email or password is wrong");
   }

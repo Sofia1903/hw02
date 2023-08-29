@@ -1,7 +1,7 @@
 import app from "./app.js";
 import mongoose from "mongoose";
 
-const DB_HOST = `mongodb+srv://${process.env.MONGO_NAME}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_HOST}`;
+const {DB_HOST} = process.env
 
 mongoose
   .connect(DB_HOST)

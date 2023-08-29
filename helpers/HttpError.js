@@ -11,4 +11,4 @@ const messages = {
     er.status = status;
     return er;
   }
-  export default HttpError;
+  export default HttpErrorCreator;

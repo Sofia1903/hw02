@@ -1,6 +1,6 @@
 import isValidObjectId from "mongoose";
 
-import HttpErrorCreator from "../helpers/HttpErrorCreator.js";
+import HttpErrorCreator from "../helpers/HttpError.js";
 
 export function validateId(req, res, next) {
   const { contactId } = req.params;
