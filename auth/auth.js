@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 
 import HttpErrorCreator from "../helpers/HttpError.js";
-import User from "../models/users";
+import User from "../models/users.js";
 import controllerDecorator from "../helpers/controllerDecorator.js";
 
 const JWT_TOKEN = process.env.JWT_KEY;

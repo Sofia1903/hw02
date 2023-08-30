@@ -5,7 +5,7 @@ import {
   userSignupSchema,
   userLogInSchema,
   userUpdateSubscription,
-} from "../../helpers/schema.js";
+} from "../../helpers/schemas.js";
 import autorizationUser from "../../auth/auth.js";
 
 const router = express.Router();

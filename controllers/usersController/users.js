@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-import User from "../../models/users";
+import User from "../../models/users.js";
 import HttpErrorCreator from "../../helpers/HttpError.js";
 
 const JWT_TOKEN = process.env.JWT_KEY;
