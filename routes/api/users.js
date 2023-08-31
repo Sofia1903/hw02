@@ -11,7 +11,7 @@ import autorizationUser from "../../auth/auth.js";
 const router = express.Router();
 
 router.post(
-  "/signup",
+  "/register",
   validateRequestBody(userSignupSchema),
   usersControllers.createNewUser
 );
