@@ -1,14 +1,15 @@
-const messages = {
-    400: "Bad request",
-    401: "Not authorized",
-    403: "Forbidden",
-    404: "Not found!",
-    409: "Conflict",
-  };
-  
-  function HttpErrorCreator(status, message = messages[status]) {
-    const er = new Error(message);
-    er.status = status;
-    return er;
-  }
-  export default HttpError;
+const errorMessageList = {
+  400: 'Bad Request',
+  401: 'Not authorized',
+  403: 'Forbidden',
+  404: 'Not found',
+  409: 'Conflict',
+};
+
+const HttpError = (status, message = errorMessageList[status]) => {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+};
+
+module.exports = HttpError;

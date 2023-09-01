@@ -1,61 +1,78 @@
-import Contact from "../../models/contacts.js";
-import HttpErrorCreator from "../../helpers/HttpErrorCreator.js";
+const {Contact} = require("../models/contact");
+ const { HttpError, ctrlWrapper } = require("../helpers");
 
-export async function listContacts(req, res) {
+const getContacts = async (req, res) => {
   const { _id: owner } = req.user;
-  console.log(req.query);
-  const { page = 1, limit = 5, favorite } = req.query;
+  const { page = 1, limit = 10 } = req.query;
   const skip = (page - 1) * limit;
-  const contacts = await Contact.find(
-    { owner, favorite },
-    "-createdAt -updatedAt",
-    {
-      skip,
-      limit,
-    }
-  ).populate("owner", "email subscription");
-  res.json(contacts);
-}
-
-export async function getContactById(req, res) {
-  const { contactId } = req.params;
-  const searchContact = await Contact.findById(contactId);
-  if (!searchContact) {
-    throw HttpErrorCreator(404);
+  try {
+    const result = await Contact.find(
+      {owner}, '-createdAt -updatedAt', {skip, limit}
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+    });
   }
-  res.json(searchContact);
-}
+};
 
-export async function addContact(req, res) {
-  const { _id: owner } = req.user;
-  const newContact = await Contact.create({ ...req.body, owner });
-  res.status(201).json(newContact);
-}
-
-export async function removeContact(req, res) {
-  const { contactId } = req.params;
-  const deletedContact = await Contact.findByIdAndRemove(contactId);
-  if (!deletedContact) {
-    throw HttpErrorCreator(404);
+const getContactById = async (req, res) => {
+  const { id } = req.params;
+  const result = await Contact.findById(id);
+  console.log(id);
+  if (!result) {
+    return res.status(404).json({
+      message: "Not found",
+    });
   }
-  res.json({ message: "Contact deleted" });
-}
+  res.json(result);
+};
 
-export async function updateContact(req, res) {
-  const { contactId } = req.params;
-  const updatedContact = await Contact.findByIdAndUpdate(contactId, req.body, {
-    new: true,
-  });
-  if (!updatedContact) {
-    throw HttpErrorCreator(404);
+const addNewContact = async (req, res) => {
+  const {_id: owner} = req.user;
+  console.log(req.params)
+  const result = await Contact.create({...req.body, owner}).populate('owner', 'name email');
+  res.status(201).json(result);
+};
+
+const deleteContact = async (req, res, next) => {
+  const { id } = req.params;
+  const result = await Contact.findByIdAndRemove(id);
+  if (!result) {
+    
+    throw HttpError(404, "Not found");
   }
-  res.json(updatedContact);
-}
+  res.json({ message: "contact deleted" });
+};
 
-export default {
-  listContacts,
-  getContactById,
-  addContact,
-  removeContact,
-  updateContact,
+const updateContactById = async (req, res) => {
+  const { id } = req.params;
+  console.log(id );
+  const result = await Contact.findByIdAndUpdate(id, req.body, {new: true});
+
+  if (!result) {
+    throw HttpError(404, "Not found");
+  }
+  res.json(result);
+};
+
+const updateFavorite = async (req, res) => {
+  const { id } = req.params;
+  console.log(id );
+  const result = await Contact.findByIdAndUpdate(id, req.body, {new: true});
+
+  if (!result) {
+    throw HttpError(404, "Not found");
+  }
+  res.json(result);
+};
+
+module.exports = {
+  getContacts: ctrlWrapper(getContacts),
+  getContactById: ctrlWrapper(getContactById),
+  addNewContact: ctrlWrapper(addNewContact),
+  updateFavorite: ctrlWrapper(updateFavorite),
+  deleteContact: ctrlWrapper(deleteContact),
+  updateContactById: ctrlWrapper(updateContactById),
 };

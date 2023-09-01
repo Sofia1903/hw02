@@ -1,41 +1,19 @@
-import express from "express";
-import contactsControllers from "../../controllers/contactsController/index.js";
-import { validateRequestBody, validateId } from "../../helpers/validation.js";
+const express = require('express')
+const ctrl =require('../../controllers/contacts')
+ const {validateBody,authenticate , isValidId} =require('../../middelwares')
+ const {schemas} =require ('../../models/contact')
+const router = express.Router()
 
-import {
-  changeContactSchema,
-  addContactSchema,
-  patchContactSchema,
-} from "../../helpers/schema.js";
-import autorizationUser from "../../auth/auth.js";
+router.get('/', authenticate, ctrl.getContacts)
 
-const router = express.Router();
+router.get('/:id', authenticate, isValidId, ctrl.getContactById )
 
-router.use(autorizationUser);
+router.post('/', authenticate, validateBody(schemas.addSchema, `missing required name field`), ctrl.addNewContact)
 
-router.get("/", contactsControllers.listContacts);
+ router.delete('/:id', authenticate, isValidId, ctrl.deleteContact)
 
-router.get("/:contactId", validateId, contactsControllers.getContactById);
+ router.put('/:id', authenticate, isValidId, validateBody(schemas.addSchema, `missing fields`), ctrl.updateContactById )
 
-router.post(
-  "/",
-  validateRequestBody(addContactSchema),
-  contactsControllers.addContact
-);
+ router.patch('/:id/favorite', authenticate, isValidId, validateBody(schemas.updateFavoriteSchema, `missing fields favorite`), ctrl.updateFavorite )
 
-router.delete("/:contactId", validateId, contactsControllers.removeContact);
-
-router.put(
-  "/:contactId",
-  validateId,
-  validateRequestBody(changeContactSchema),
-  contactsControllers.updateContact
-);
-
-router.patch(
-  "/:contactId/favorite",
-  validateId,
-  validateRequestBody(patchContactSchema),
-  contactsControllers.updateContact
-);
-export default router;
+module.exports = router
