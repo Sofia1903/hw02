@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs/promises');
 const jimp = require('jimp');
 const {nanoid} = require('nanoid')
-// const ElasticEmail = require('@elasticemail/elasticemail-client');
+
 
 require("dotenv").config();
 const {User} = require('../models/user');
@@ -23,9 +23,7 @@ const register = async (req, res) => {
   if (user) {
     throw HttpError(409, 'Email in use');
   }
-  // if (!verify) {
-  //   throw HttpError(401);
-  // }
+
   const avatarURL = gravatar.url(email, { s: '250' });
   const verificationToken = nanoid();
   const hashPassword = await bcrypt.hash(password, 10);
@@ -45,23 +43,8 @@ const register = async (req, res) => {
 
   await sendEmail(verifyEmail);
 
-  // const api = new ElasticEmail.EmailsApi();
-
-  // const verifyEmail = ElasticEmail.EmailMessageData.constructFromObject({
-  //   Recipients: [new ElasticEmail.EmailRecipient(email)],
-  //   Content: {
-  //     Body: [
-  //       ElasticEmail.BodyPart.constructFromObject({
-  //         ContentType: 'HTML',
-  //         Content: `<a target='_blank' href='${BASE_URL}/users/verify/${verificationToken}' >Click to verify your email</a>`,
-  //       }),
-  //     ],
-  //     Subject: 'Verify email',
-  //     From: 'boikodmytro1@ukr.net',
-  //   },
-  // });
-
-  // await api.emailsPost(verifyEmail, sendEmail);
+  
+  
 
   res.status(201).json({
     user: {

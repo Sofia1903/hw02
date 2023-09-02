@@ -1,6 +1,6 @@
 const express = require('express');
 const ctrl = require('../../controllers/auth')
-// const superagent = require('superagent');
+
 
 const {validateBody, authenticate, upload} = require('../../middelwares');
 
