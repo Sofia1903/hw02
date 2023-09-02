@@ -1,28 +1,26 @@
-
-const nodemailer = require("nodemailer");
-
+const formData = require('form-data');
+const Mailgun = require('mailgun.js');
+const mailgun = new Mailgun(formData);
 require('dotenv').config();
 
-const { UKR_NET_EMAIL, UKR_NET_PASSWORD} = process.env;
+const { MAILGUN_API_KEY } = process.env;
 
-const transporter = nodemailer.createTransport({
-	
-	host: "smtp.ukr.net",
-	port: 465,
-	secure: true,
-	auth: {
-		user: UKR_NET_EMAIL,
-		pass: UKR_NET_PASSWORD,
-	},
-});
+const sendEmail = async data => {
+  const mg = mailgun.client({
+    username: 's.skriabina19@gmail.com',
+    key: MAILGUN_API_KEY,
+  });
 
-const sendEmail = async (data) => {
-	const email = { ...data, from: UKR_NET_EMAIL };
-	await transporter.sendMail(email);
-
-	return true;
+  mg.messages
+    .create('sandboxf630bcab1b57429ebde455652c2111da.mailgun.org', {
+      from: 'Mailgun Sandbox <s.skriabina19@gmail.com>',
+      to: [data.to],
+      subject: 'Verify your email',
+      text: 'Verify your email',
+      html: data.html,
+    })
+    .then(msg => console.log(msg))
+    .catch(err => console.log(err));
 };
 
 module.exports = sendEmail;
-
-

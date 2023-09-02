@@ -1,179 +1,130 @@
+const { ctrlWrapper, HttpError, sendEmail } = require('../helpers');
+const { User } = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const gravatar = require('gravatar');
+const Jimp = require('jimp');
 const path = require('path');
 const fs = require('fs/promises');
-const jimp = require('jimp');
-const {nanoid} = require('nanoid')
+const { nanoid } = require('nanoid');
 
-
-require("dotenv").config();
-const {User} = require('../models/user');
-
-const { HttpError, ctrlWrapper, sendEmail } = require("../helpers");
-
-const {SECRET_KEY, BASE_URL}= process.env;
-
+const { SECRET_KEY, BASE_URL } = process.env;
 const avatarsDir = path.join(__dirname, '../', 'public', 'avatars');
 
-const register = async (req, res) => {
-  const { email, password} = req.body;
+const registerCtrl = async (req, res) => {
+  const { email, password } = req.body;
   const user = await User.findOne({ email });
-
   if (user) {
     throw HttpError(409, 'Email in use');
   }
-
-  const avatarURL = gravatar.url(email, { s: '250' });
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const avatarUrl = gravatar.url(email);
   const verificationToken = nanoid();
-  const hashPassword = await bcrypt.hash(password, 10);
-
-  const result = await User.create({
+  const newUser = await User.create({
     ...req.body,
-    password: hashPassword,
-    avatarURL,
+    password: hashedPassword,
+    avatarUrl,
     verificationToken,
   });
-
   const verifyEmail = {
     to: email,
-    subject: "Verify email",
-    html: `<a target="blank" href="${BASE_URL}/users/verify/${verificationToken}">Click to verify email </a>`,
+    html: `<html><a target="_blank" href='${BASE_URL}/api/auth/verify/${verificationToken}'>Click to verify email</a></html>`,
   };
-
   await sendEmail(verifyEmail);
 
-  
-  
-
-  res.status(201).json({
-    user: {
-      email: result.email,
-      subscription: result.subscription,
-    },
-  });
+  res.status(201).json({ user: { email: newUser.email, subscription: newUser.subscription } });
 };
-
-const verifyUserEmail = async (req, res) => {
+const getVerifiedCtrl = async (req, res) => {
   const { verificationToken } = req.params;
   const user = await User.findOne({ verificationToken });
   if (!user) {
-    throw HttpError(404, 'User not found');
+    throw HttpError(401, 'Email not found');
   }
-  await User.findByIdAndUpdate(user._id, {
-    verify: true,
-    verificationToken: null,
-  });
+  await User.findByIdAndUpdate(user._id, { verify: true, verificationToken: null });
+  res.status(200).json({ message: 'Email successfully verified' });
+};
+const resendVerifyCtrl = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HttpError(401, 'Email not found');
+  }
+  if (user.verify) {
+    throw HttpError(401, 'Email already verified');
+  }
+  const verifyEmail = {
+    to: email,
+    html: `<html><a target="_blank" href='${BASE_URL}/api/auth/verify/${user.verificationToken}'>Click to verify email</a></html>`,
+  };
+  await sendEmail(verifyEmail);
 
-  res.status(200).json({
-    message: 'Verification successful',
-  });
-}
-
-const login = async(req , res) => {
+  res.status(200).json({ message: 'Verify email send success' });
+};
+const loginCtrl = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (!user) {
-    throw HttpError(401, "Email or password is wrong");
+    throw HttpError(401, 'Email or password is not valid');
   }
   if (!user.verify) {
-    throw HttpError(401, "Email not verified");
+    throw HttpError(401, 'Email is not verified');
   }
-
-  const passwordCompare = await bcrypt.compare(password, user.password)
-  if (!passwordCompare ) {
-    throw HttpError(401, "Email or password is wrong");
+  const comparePassword = await bcrypt.compare(password, user.password);
+  if (!comparePassword) {
+    throw HttpError(401, 'Email or password is not valid');
   }
-
-  const payload ={
-    id:user._id,
-  }
-
-  const token = jwt.sign(payload, SECRET_KEY,{expiresIn:"23h"})
+  const payload = { id: user._id };
+  const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '12h' });
   await User.findByIdAndUpdate(user._id, { token });
- res.status(200).json({
-  token: token,
-  user: {
-    email: user.email,
-    subscription: user.subscription,
-  },
-})
+  res.status(200).json({ token, user: { email: user.email, subscription: user.subscription } });
 };
-
-const getCurrent = async (req, res, next) => {
-  try {
-		const { email, subscription } = req.user;
-		if (!req.user) {
-			throw HttpError(401, "Not authorized");
-		}
-		res.json({ email, subscription });
-	} catch (error) {
-		next(error);
-	}
+const logoutCtrl = async (req, res) => {
+  const { _id } = req.user;
+  await User.findByIdAndUpdate(_id, { token: null });
+  res.status(204).json({ message: 'Logout success' });
 };
-
-const logout = async(req, res) =>{
-  const{_id} = req.user;
-  await User.findByIdAndUpdate(_id, {token:''})
-  res.status(204).json({
-    message: 'Logout success',
-  });
+const getCurrentCtrl = (req, res) => {
+  const { email, subscription } = req.user;
+  res.json({ email, subscription });
 };
-
-const updateAvatar = async(req, res) =>{
-  const { _id } = req.user;  
+const updateSubscriptionCtrl = async (req, res) => {
+  const { _id, subscription } = req.user;
+  const newSubscription = req.body.subscription;
+  if (newSubscription === subscription) {
+    throw HttpError(409, 'Invalid subscription');
+  }
+  const updatedSubscription = await User.findByIdAndUpdate(
+    _id,
+    { $set: { subscription: newSubscription } },
+    { new: true },
+  );
+  if (!updatedSubscription) {
+    throw HttpError(409, 'Not Found');
+  }
+  res.status(200).json({ message: `new subscription is ${updatedSubscription.subscription}` });
+};
+const updateAvatarCtrl = async (req, res) => {
+  const { _id } = req.user;
   const { path: tempUpload, originalname } = req.file;
-  const image = await jimp.read(tempUpload);
-  await image.resize(250, 250);
-  await image.writeAsync(tempUpload);
-
-  const fileName = `${_id}_${originalname}`;
-  const resultUpload = path.join(avatarsDir, fileName);
-
+  const filename = `${_id}_${originalname}`;
+  const resultUpload = path.join(avatarsDir, filename);
   await fs.rename(tempUpload, resultUpload);
+  const image = await Jimp.read(resultUpload);
+  await image.resize(250, 250).write(resultUpload);
+  const avatarUrl = path.join('avatars', filename);
+  await User.findByIdAndUpdate(_id, { avatarUrl });
 
-  const avatarURL = path.join('avatars', fileName);
-  await User.findByIdAndUpdate(_id, { avatarURL });
-  res.status(200).json({
-    avatarURL,
-  });
-};
-
-const resendVerifyEmail = async (req, res, next) => {
-	try {
-		const { email } = req.body;
-		const user = await User.findOne({ email });
-
-		if (!user) {
-			throw HttpError(401, "Email not found");
-		}
-
-		if (user.verify) {
-			throw HttpError(400, "Verification has already been passed");
-		}
-
-		const verifyEmail = {
-			to: email,
-			subject: "Verify email",
-			html: `<a target="blank" href="${BASE_URL}/users/verify/${user.verificationToken}">Click to verify email </a>`,
-		};
-
-		await sendEmail(verifyEmail);
-
-		res.json({
-			message: "Verification email sent ",
-		});
-	} catch (error) {
-		next(error);
-	}
+  console.log(avatarUrl);
+  res.json({ avatarUrl });
 };
 
 module.exports = {
-  register: ctrlWrapper(register),
-  verifyUserEmail:ctrlWrapper(verifyUserEmail),
-  resendVerifyEmail: ctrlWrapper(resendVerifyEmail),
-  login: ctrlWrapper(login),
-  getCurrent: ctrlWrapper(getCurrent),
-  logout: ctrlWrapper(logout),
-  updateAvatar:ctrlWrapper(updateAvatar),
+  registerCtrl: ctrlWrapper(registerCtrl),
+  loginCtrl: ctrlWrapper(loginCtrl),
+  logoutCtrl: ctrlWrapper(logoutCtrl),
+  getCurrentCtrl: ctrlWrapper(getCurrentCtrl),
+  updateSubscriptionCtrl: ctrlWrapper(updateSubscriptionCtrl),
+  updateAvatarCtrl: ctrlWrapper(updateAvatarCtrl),
+  getVerifiedCtrl: ctrlWrapper(getVerifiedCtrl),
+  resendVerifyCtrl: ctrlWrapper(resendVerifyCtrl),
 };
