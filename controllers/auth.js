@@ -20,20 +20,27 @@ const registerCtrl = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const avatarUrl = gravatar.url(email);
   const verificationToken = nanoid();
+
+
+  const verifyEmail = {
+    to: email,
+    html: `<html><a target="_blank" href='${BASE_URL}/api/auth/verify/${verificationToken}'>Click to verify email</a></html>`,
+  };
+await sendEmail(verifyEmail).catch(err => {throw HttpError(err.status, 'Smth happened')})
+
+  res.status(201).json({ user: { email: newUser.email, subscription: newUser.subscription } });
+};
+
   const newUser = await User.create({
     ...req.body,
     password: hashedPassword,
     avatarUrl,
     verificationToken,
   });
-  const verifyEmail = {
-    to: email,
-    html: `<html><a target="_blank" href='${BASE_URL}/api/auth/verify/${verificationToken}'>Click to verify email</a></html>`,
-  };
-  await sendEmail(verifyEmail);
 
-  res.status(201).json({ user: { email: newUser.email, subscription: newUser.subscription } });
-};
+
+
+
 const getVerifiedCtrl = async (req, res) => {
   const { verificationToken } = req.params;
   const user = await User.findOne({ verificationToken });

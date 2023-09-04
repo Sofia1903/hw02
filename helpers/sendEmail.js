@@ -1,29 +1,26 @@
 const formData = require('form-data');
 const Mailgun = require('mailgun.js');
+
 const mailgun = new Mailgun(formData);
-require('dotenv').config();
 
 const { MAILGUN_API_KEY } = process.env;
 
-const sendEmail = async data => {
-  const mg = mailgun.client({
-    username: 's.skriabina19@gmail.com',
-    key: MAILGUN_API_KEY,
-  });
+const mg = maligun.client ({
+username: "api",
+KEY: MAILGUN_API_KEY,
+});
 
-  try {
-    const msg = await mg.messages.create('sandboxf630bcab1b57429ebde455652c2111da.mailgun.org', {
-      from: 'Mailgun Sandbox <s.skriabina19@gmail.com>',
-      to: [data.to],
-      subject: 'Verify your email',
-      text: 'Verify your email',
-      html: data.html,
-    });
-    console.log(msg);
-    
-  } catch (err) {
-    console.error(err);
-  }
+
+const sendEmail = (data) => {
+  return new Promise(function(resolve, reject){
+    mg.messages.create("sandbox.639142e59b384903ac63b7b10f9c3c5b.mailgun.org", {
+      from: "Excited User <mailgun@sandbox-123.mailgun.org>",
+      ...data,
+    })
+    .then(data => resolve(data))
+    .catch(err => reject(err))
+  })
 };
 
 module.exports = sendEmail;
+
