@@ -9,6 +9,8 @@ const {
 module.exports = {
   Contact,
   validationContact,
+  validationFavorite,
+  User,
   validationRegistrationUser,
   validationLoginUser,
   validationSubscription,
