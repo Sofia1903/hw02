@@ -26,17 +26,19 @@ const registerCtrl = async (req, res) => {
     to: email,
     html: `<html><a target="_blank" href='${BASE_URL}/api/auth/verify/${verificationToken}'>Click to verify email</a></html>`,
   };
-await sendEmail(verifyEmail).catch(err => {throw HttpError(err.status, 'Smth happened')})
-
-  res.status(201).json({ user: { email: newUser.email, subscription: newUser.subscription } });
-};
+  await sendEmail(verifyEmail).catch(err => { throw HttpError(err.status, 'Smth happened') })
 
   const newUser = await User.create({
     ...req.body,
     password: hashedPassword,
     avatarUrl,
     verificationToken,
-  });
+  })
+
+  res.status(201).json({ user: { email: newUser.email, subscription: newUser.subscription } });
+};
+
+
 
 
 
