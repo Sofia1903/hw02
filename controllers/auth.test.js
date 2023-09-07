@@ -1,5 +1,4 @@
 const axios = require('axios');
-
 const loginCtrl = require('./auth');
 
 describe('Test Login Controller', () => {

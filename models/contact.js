@@ -8,18 +8,17 @@ const contactSchema = new Schema(
   {
     name: {
       type: String,
-      required: [true, 'Set name for contact'],
     },
     email: {
       type: String,
       unique: true,
-      required: true,
+      
     },
     phone: {
       type: String,
       undefined: true,
       match: phoneRegex,
-      required: true,
+      
     },
     favorite: {
       type: Boolean,
@@ -28,7 +27,7 @@ const contactSchema = new Schema(
     owner: {
       type: Schema.Types.ObjectId,
       ref: 'user',
-      required: true,
+     
     },
   },
   { versionKey: false, timestamps: true },
