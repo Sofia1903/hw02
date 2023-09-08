@@ -9,7 +9,6 @@ const userSchema = new Schema(
   {
     name: {
       type: String,
-      required: [true, 'John Doe'],
     },
     email: {
       type: String,
@@ -20,7 +19,7 @@ const userSchema = new Schema(
     password: {
       type: String,
       minlength: 6,
-      required: 6,
+      required: true,
     },
     subscription: {
       type: String,
@@ -51,7 +50,7 @@ userSchema.post('save', handleMongooseError);
 const User = model('user', userSchema);
 
 const registerSchema = Joi.object({
-  name: Joi.string().min(2).required(),
+  name: Joi.string().min(2),
   email: Joi.string().pattern(emailRegex).required(),
   password: Joi.string().min(6).required(),
 });
